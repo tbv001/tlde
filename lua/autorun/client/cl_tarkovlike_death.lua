@@ -28,7 +28,7 @@ hook.Add("CalcView", "TLDE_CalcView", function(ply, pos, angles, fov)
             local curEnt = IsValid(ragdoll) and ragdoll or observedEnt
 
             local head = curEnt:LookupBone("ValveBiped.Bip01_Head1")
-            if head then
+            if head and GetConVar("tlde_hide_head"):GetBool() then
                 curEnt:ManipulateBoneScale(head, Vector(0, 0, 0))
                 ragdollEnt = curEnt
             end
