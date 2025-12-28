@@ -24,7 +24,7 @@ hook.Add("CalcView", "TLDE_CalcView", function(ply, pos, angles, fov)
             soundNeedReset = false
         end
 
-        if IsValid(ragdoll) or (IsValid(observedEnt) and observedEnt:GetClass() == "prop_ragdoll") then
+        if not ply:Alive() and (IsValid(ragdoll) or (IsValid(observedEnt) and observedEnt:GetClass() == "prop_ragdoll")) then
             local curEnt = IsValid(ragdoll) and ragdoll or observedEnt
 
             local head = curEnt:LookupBone("ValveBiped.Bip01_Head1")
@@ -36,7 +36,7 @@ hook.Add("CalcView", "TLDE_CalcView", function(ply, pos, angles, fov)
             -- Getting the first attachment as a fallback if the "eyes" attachment is missing might unintentionally put the camera somewhere else.
             local eyeAttachment = curEnt:GetAttachment(curEnt:LookupAttachment("eyes")) or curEnt:GetAttachment(1)
             if eyeAttachment then
-                 if deathStart == 0 then deathStart = CurTime() end
+                if deathStart == 0 then deathStart = CurTime() end
 
                 local view = {
                     origin = eyeAttachment.Pos + (eyeAttachment.Ang:Forward() * GetConVar("tlde_forward_offset"):GetFloat()),
