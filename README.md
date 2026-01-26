@@ -1,6 +1,6 @@
 # Tarkov-like Death Effect
 
-This is the official repository for the **Tarkov-like Death Effect** Garry's Mod workshop addon.
+A Garry's Mod addon that attempts to replicate Escape from Tarkov's first-person death effect.
 
 [Steam Workshop Page](https://steamcommunity.com/sharedfiles/filedetails/?id=3629695481)
 
