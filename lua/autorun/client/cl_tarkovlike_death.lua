@@ -16,6 +16,7 @@ local tlde_block_respawn = true
 local tlde_forward_offset = -3.0
 local tlde_sound_fade_enabled = true
 local tlde_hide_head = true
+local tlde_extra_alive_check = false
 local tlde_hs_enabled = false
 local tlde_hs_fade_delay = 0.0
 local tlde_hs_fade_time = 0.0
@@ -35,6 +36,7 @@ net.Receive("TLDE_UpdateConvars", function()
     tlde_forward_offset = net.ReadFloat()
     tlde_sound_fade_enabled = net.ReadBool()
     tlde_hide_head = net.ReadBool()
+    tlde_extra_alive_check = net.ReadBool()
     tlde_hs_enabled = net.ReadBool()
     tlde_hs_fade_delay = net.ReadFloat()
     tlde_hs_fade_time = net.ReadFloat()
@@ -94,7 +96,7 @@ hook.Add("CalcView", "TLDE_CalcView", function(ply, _, _, fov)
             soundNeedReset = false
         end
 
-        if not ply:Alive() and (IsValid(ragdoll) or (IsValid(observedEnt) and observedEnt:GetClass() == "prop_ragdoll")) then
+        if (not tlde_extra_alive_check or not ply:Alive()) and (IsValid(ragdoll) or (IsValid(observedEnt) and observedEnt:GetClass() == "prop_ragdoll")) then
             local curEnt = IsValid(ragdoll) and ragdoll or observedEnt
             local head = curEnt:LookupBone("ValveBiped.Bip01_Head1")
             if head and tlde_hide_head then
