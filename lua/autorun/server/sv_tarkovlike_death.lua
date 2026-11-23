@@ -1,4 +1,5 @@
 util.AddNetworkString("TLDE_UpdateConvars")
+util.AddNetworkString("TLDE_PlayerDeath")
 
 -- ConVars.
 CreateConVar("tlde_enabled", "1", { FCVAR_ARCHIVE }, "Enable or disable the Tarkov-like death effect.")
@@ -57,6 +58,32 @@ hook.Add("PlayerDeathSound", "TLDE_PlayerDeathSound", function()
     if GetConVar("tlde_enabled"):GetBool() then
         return true
     end
+end)
+
+-- Track whether the kill was a headshot.
+hook.Add("ScalePlayerDamage", "TLDE_ScalePlayerDamage", function(ply, hitgroup)
+    if hitgroup == HITGROUP_HEAD then
+        ply.TLDE_Headshot = true
+    end
+end)
+
+hook.Add("PostEntityTakeDamage", "TLDE_PostEntityTakeDamage", function(ent)
+    if ent:IsPlayer() then
+        ent.TLDE_Headshot = false
+    end
+end)
+
+hook.Add("PlayerSpawn", "TLDE_PlayerSpawn", function(ply)
+    ply.TLDE_Headshot = false
+end)
+
+-- Notify the client when they die and whether it was a headshot.
+hook.Add("PlayerDeath", "TLDE_PlayerDeath", function(victim)
+    net.Start("TLDE_PlayerDeath")
+    net.WriteBool(victim.TLDE_Headshot == true)
+    net.Send(victim)
+
+    victim.TLDE_Headshot = false
 end)
 
 -- Update convars when they are changed.

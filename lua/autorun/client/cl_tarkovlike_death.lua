@@ -3,6 +3,9 @@ local matGradientUp = Material("gui/gradient_up")
 local soundNeedReset = false
 local deathStart = 0
 local ragdollEnt
+local wasHeadshot = false
+local fadeDelay = 0
+local fadeTime = 0
 
 -- These will be updated by the server once the player initially spawned or when the server updates the convars.
 local tlde_enabled = true
@@ -42,6 +45,34 @@ net.Receive("TLDE_UpdateConvars", function()
     tlde_randomize_fade_time_max = net.ReadFloat()
 end)
 
+-- Compute fade delay and fade time for the current death.
+local function ComputeFadeTimings()
+    if tlde_hs_enabled and wasHeadshot then
+        fadeDelay = math.max(0, tlde_hs_fade_delay)
+        fadeTime = math.max(0, tlde_hs_fade_time)
+    elseif tlde_randomize_fade then
+        local delayMin = math.max(0, math.min(tlde_randomize_fade_delay_min, tlde_randomize_fade_delay_max))
+        local delayMax = math.max(0, math.max(tlde_randomize_fade_delay_min, tlde_randomize_fade_delay_max))
+        local timeMin = math.max(0, math.min(tlde_randomize_fade_time_min, tlde_randomize_fade_time_max))
+        local timeMax = math.max(0, math.max(tlde_randomize_fade_time_min, tlde_randomize_fade_time_max))
+
+        fadeDelay = math.Rand(delayMin, delayMax)
+        fadeTime = math.Rand(timeMin, timeMax)
+    else
+        fadeDelay = math.max(0, tlde_fade_delay)
+        fadeTime = math.max(0, tlde_fade_time)
+    end
+end
+
+-- Receive death info sent by the server.
+net.Receive("TLDE_PlayerDeath", function()
+    wasHeadshot = net.ReadBool()
+
+    if deathStart ~= 0 and wasHeadshot and tlde_hs_enabled then
+        ComputeFadeTimings()
+    end
+end)
+
 -- Adjust the camera to the ragdoll's eye attachment position.
 hook.Add("CalcView", "TLDE_CalcView", function(ply, _, _, fov)
     if tlde_enabled then
@@ -76,6 +107,7 @@ hook.Add("CalcView", "TLDE_CalcView", function(ply, _, _, fov)
             if eyeAttachment then
                 if deathStart == 0 then
                     deathStart = CurTime()
+                    ComputeFadeTimings()
                 end
 
                 local view = {
@@ -88,11 +120,13 @@ hook.Add("CalcView", "TLDE_CalcView", function(ply, _, _, fov)
 
                 return view
             end
-        else
+        elseif deathStart ~= 0 then
             deathStart = 0
+            wasHeadshot = false
         end
-    else
+    elseif deathStart ~= 0 then
         deathStart = 0
+        wasHeadshot = false
     end
 end)
 
@@ -100,12 +134,9 @@ end)
 hook.Add("HUDPaint", "TLDE_HUDPaint", function()
     if tlde_enabled and tlde_fade_enabled then
         if deathStart ~= 0 then
-            local fadeDelay = tlde_fade_delay
-            local fadeTime = tlde_fade_time
-
             local elapsed = CurTime() - deathStart
-            if elapsed > fadeDelay then
-                local progress = math.Clamp((elapsed - fadeDelay) / fadeTime, 0, 1)
+            if elapsed >= fadeDelay then
+                local progress = fadeTime > 0 and math.Clamp((elapsed - fadeDelay) / fadeTime, 0, 1) or 1
                 local gradientSize = ScrH() * 0.5
                 local lidHeight = Lerp(progress, -gradientSize, ScrH() / 2)
 
@@ -141,9 +172,6 @@ end)
 hook.Add("CreateMove", "TLDE_CreateMove", function(cmd)
     if tlde_enabled and tlde_block_respawn and tlde_fade_enabled then
         if deathStart ~= 0 then
-            local fadeDelay = tlde_fade_delay
-            local fadeTime = tlde_fade_time
-
             local elapsed = CurTime() - deathStart
             if elapsed < (fadeDelay + fadeTime) + 0.5 then
                 cmd:ClearButtons()
