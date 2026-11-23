@@ -77,24 +77,24 @@ end)
 
 -- Adjust the camera to the ragdoll's eye attachment position.
 hook.Add("CalcView", "TLDE_CalcView", function(ply, _, _, fov)
+    -- A fix for the player dead body's head missing after respawn, mainly for ragdoll mods that keeps the player's dead body.
+    if ragdollEnt and IsValid(ragdollEnt) and deathStart == 0 then
+        local head = ragdollEnt:LookupBone("ValveBiped.Bip01_Head1")
+        if head then
+            ragdollEnt:ManipulateBoneScale(head, Vector(1, 1, 1))
+        end
+
+        ragdollEnt = nil
+    end
+
+    if soundNeedReset and deathStart == 0 then
+        LocalPlayer():ConCommand("soundfade 0 1")
+        soundNeedReset = false
+    end
+
     if tlde_enabled then
         local ragdoll = ply:GetRagdollEntity()
         local observedEnt = ply:GetObserverTarget() -- Ragdoll mods usually set the player's observer target to the player's ragdoll.
-
-        -- A fix for the player dead body's head missing after respawn, mainly for ragdoll mods that keeps the player's dead body.
-        if ragdollEnt and IsValid(ragdollEnt) and deathStart == 0 then
-            local head = ragdollEnt:LookupBone("ValveBiped.Bip01_Head1")
-            if head then
-                ragdollEnt:ManipulateBoneScale(head, Vector(1, 1, 1))
-            end
-
-            ragdollEnt = nil
-        end
-
-        if soundNeedReset and deathStart == 0 then
-            LocalPlayer():ConCommand("soundfade 0 1")
-            soundNeedReset = false
-        end
 
         if (not tlde_extra_alive_check or not ply:Alive()) and (IsValid(ragdoll) or (IsValid(observedEnt) and observedEnt:GetClass() == "prop_ragdoll")) then
             local curEnt = IsValid(ragdoll) and ragdoll or observedEnt
